@@ -6,6 +6,7 @@ if (isset($argv)) {
 			$handle = @fopen($argv[1], "r");
 			if ($handle) {
 				$xml_in = fread($handle, filesize($argv[1]));
+				$xml_original = $argv[1];
 				if ($xml_in == "") {
 					echo "Error!  File was blank: " . $argv[1] . "\n";
 				}
@@ -27,6 +28,7 @@ if ($xml_in == "" && isset($_FILES['nmap'])) {
 			$handle = @fopen($_FILES['nmap']['tmp_name'], "r");
 			if ($handle) {
 				$xml_in = fread($handle, filesize($_FILES['nmap']['tmp_name']));
+				$xml_original = $_FILES['nmap']['name'];
 			}
 		}
 	}
@@ -43,14 +45,26 @@ if ($xml_in == "" && isset($_FILES['nmap'])) {
 <?php
 if ($xml_in != "") {
 	$xml = simplexml_load_string($xml_in);
+	echo "nmap2html - " . $xml_original. "\n";
 	if (isset($xml["args"])) {
-		echo '<b>' . $xml["args"] . '</b><hr size="1"><br>';
+		echo "<br><b>" . $xml["args"] . "</b>\n";
+	}
+	if (isset($xml["startstr"]) && isset($xml->runstats->finished["timestr"])) {
+		echo "<br>Started <u>" . $xml["startstr"] . "</u>, Finished <u>" . $xml->runstats->finished["timestr"] . "</u>\n";
+	}
+	echo "<hr size=\"1\"><br>\n";
+	foreach ($xml as $host => $value) {
+		if ($host == "host") {
+			echo $value . "\n";
+		}
 	}
 } else {
 ?>
 	<form action="?" method="post" enctype="multipart/form-data">
-	<input type="file" name="nmap">
-	<input type="submit" value="Process">
+	<fieldset style="display: inline;">
+	<legend>nmap2html</legend>
+	<label for="nmap">nmap XML file:</label> <input type="file" name="nmap"> <input type="submit" value="Process">
+	</legend>
 	</form>
 <?php
 }
