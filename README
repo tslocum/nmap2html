@@ -1,0 +1,8 @@
+nmap2html works from the command line or the web
+
+CLI Usage:
+  php nmap2html.php [options] nmap.xml>>output.html
+
+CLI Options:
+  --showclosed to display closed ports
+  --showfiltered to display filtered ports

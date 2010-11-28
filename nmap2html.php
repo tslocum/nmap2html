@@ -1,21 +1,33 @@
 <?php
+# nmap2html
+# https://github.com/tslocum/nmap2html
 $xml_in = "";
+$opts_showclosed = false;
+$opts_showfiltered = false;
 if (isset($argv)) {
 	if (count($argv) > 0) {
 		if (isset($argv[1])) {
-			$handle = @fopen($argv[1], "r");
+			foreach ($argv as $arg) {
+				if (strtolower($arg) == "--showclosed") {
+					$opts_showclosed = true;
+				} else if (strtolower($arg) == "--showfiltered") {
+					$opts_showfiltered = true;
+				}
+			}
+			$handle = @fopen(end($argv), "r");
 			if ($handle) {
-				$xml_in = fread($handle, filesize($argv[1]));
-				$xml_original = $argv[1];
+				$xml_in = fread($handle, filesize(end($argv)));
+				$xml_original = end($argv);
 				if ($xml_in == "") {
-					echo "Error!  File was blank: " . $argv[1] . "\n";
+					echo "Error!  File was blank: " . end($argv) . "\n";
 				}
 			} else {
-				echo "Error!  Unable to read file: " . $argv[1] . "\n";
+				echo "Error!  Unable to read file: " . end($argv) . "\n";
 			}
 		} else {
 			echo "nmap2html - by tslocum <tslocum@gmail.com>\n";
-			echo "Usage: php -f nmap2html.php nmap.xml>>output.html\n";
+			echo "Usage: php nmap2html.php [options] nmap.xml>>output.html\n";
+			echo "Options: --showclosed --showfiltered\n";
 		}
 		if ($xml_in == "") {
 			die();
@@ -29,6 +41,12 @@ if ($xml_in == "" && isset($_FILES['nmap'])) {
 			if ($handle) {
 				$xml_in = fread($handle, filesize($_FILES['nmap']['tmp_name']));
 				$xml_original = $_FILES['nmap']['name'];
+				if (isset($_POST['showclosed'])) {
+					$opts_showclosed = true;
+				}
+				if (isset($_POST['showfiltered'])) {
+					$opts_showfiltered = true;
+				}
 			}
 		}
 	}
@@ -62,7 +80,7 @@ if ($xml_in != "") {
 				echo "<b>" . $value->address["addr"] . "</b> \"" . $value->hostnames->hostname["name"] . "\" [" . $value->address["addrtype"] . "]<br>\n";
 				$ports_displayed = 0;
 				foreach ($value->ports->port as $port) {
-					if ($port->state["state"] == "open") {
+					if ($port->state["state"] == "open" || ($port->state["state"] == "closed" && $opts_showclosed) || ($port->state["state"] == "filtered" && $opts_showfiltered)) {
 						echo $port["protocol"] . " " . $port["portid"] . " " . $port->state["state"] . " [" . $port->state["reason"] . "] " . $port->service["name"] . " (" . $port->service["product"] . ")<br>\n";
 						$ports_displayed++;
 					}
@@ -79,6 +97,8 @@ if ($xml_in != "") {
 	<form action="?" method="post" enctype="multipart/form-data">
 	<fieldset style="display: inline;">
 	<legend>nmap2html</legend>
+	<label for="showclosed">show closed ports:</label> <input type="checkbox" name="showclosed"><br>
+	<label for="showfiltered">show filtered ports:</label> <input type="checkbox" name="showfiltered"><br>
 	<label for="nmap">nmap XML file:</label> <input type="file" name="nmap"> <input type="submit" value="Process">
 	</legend>
 	</form>
