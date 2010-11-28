@@ -49,13 +49,29 @@ if ($xml_in != "") {
 	if (isset($xml["args"])) {
 		echo "<br><b>" . $xml["args"] . "</b>\n";
 	}
+	if (isset($xml->runstats->hosts["total"]) && isset($xml->runstats->hosts["up"]) && isset($xml->runstats->hosts["down"])) {
+		echo "<br>" . $xml->runstats->hosts["total"]. " hosts in file [" . $xml->runstats->hosts["up"] . " up/" . $xml->runstats->hosts["down"] . " down]\n";
+	}
 	if (isset($xml["startstr"]) && isset($xml->runstats->finished["timestr"])) {
 		echo "<br>Started <u>" . $xml["startstr"] . "</u>, Finished <u>" . $xml->runstats->finished["timestr"] . "</u>\n";
 	}
-	echo "<hr size=\"1\"><br>\n";
-	foreach ($xml as $host => $value) {
-		if ($host == "host") {
-			echo $value . "\n";
+	echo "<br>-------<br>\n";
+	foreach ($xml as $key => $value) {
+		if ($key == "host") {
+			if ($value->ports != "") {
+				echo "<b>" . $value->address["addr"] . "</b> \"" . $value->hostnames->hostname["name"] . "\" [" . $value->address["addrtype"] . "]<br>\n";
+				$ports_displayed = 0;
+				foreach ($value->ports->port as $port) {
+					if ($port->state["state"] == "open") {
+						echo $port["protocol"] . " " . $port["portid"] . " " . $port->state["state"] . " [" . $port->state["reason"] . "] " . $port->service["name"] . " (" . $port->service["product"] . ")<br>\n";
+						$ports_displayed++;
+					}
+				}
+				if ($ports_displayed == 0) {
+					echo "No interesting ports.<br>\n";
+				}
+				echo "-------<br>\n";
+			}
 		}
 	}
 } else {
